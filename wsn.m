@@ -42,18 +42,20 @@ reciprocatedInteractions = 0;
 totalResponseTime = zeros(1, noOfNodes);
 
 % Trust Calculation and Matrix Initialization
-trustMatrix = zeros(noOfNodes, noOfNodes);
+deliveryRatio = zeros(noOfNodes, noOfNodes);
+compatibility = zeros(noOfNodes, noOfNodes);
+cooperativeness = zeros(noOfNodes, noOfNodes);
 
 for i = 1:noOfNodes
     for j = 1:noOfNodes
         if i ~= j && neighborNode(i, j) == 1
             % Calculate Delivery Ratio (DR)
-            deliveryRatio = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
+            deliveryRatio(i, j) = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
             
             % Calculate Compatibility using Jaccards Similarity
             nodeA = [transmissionRange, interferenceRange, transmissionRate, deliveryRate, initialEnergyLevel];
             nodeB = [transmissionRange, interferenceRange, transmissionRate, deliveryRate, initialEnergyLevel];
-            compatibility = jaccardSimilarity(nodeA, nodeB);
+            compatibility(i, j) = jaccardSimilarity(nodeA, nodeB);
             
             % Simulate interaction between node i and node j
             totalInteractions = totalInteractions + 1;
@@ -78,15 +80,7 @@ for i = 1:noOfNodes
             averageResponseTime = sum(totalResponseTime) / noOfNodes;
 
             % Calculate Cooperativeness
-            cooperativeness = successRate + reciprocityRate + avgResponseTime;
-            
-            % Adjust cooperativeness based on malicious nodes
-            if ismember(i, 1:noOfMaliciousNodes) || ismember(j, 1:noOfMaliciousNodes)
-                cooperativeness = 0; % Malicious nodes have zero cooperativeness
-            end
-            
-            % Populate Trust Matrix as the sum of cooperativeness, compatibility, and delivery ratio
-            trustMatrix(i, j) = cooperativeness + compatibility + deliveryRatio;
+            cooperativeness(i, j) = successRate + reciprocityRate + avgResponseTime;
         end
     end
 end
