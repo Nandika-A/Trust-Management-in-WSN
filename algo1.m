@@ -33,18 +33,15 @@ function TrustEvaluation(a, b)
         trust_a_to_b = compatibility_a_b + cooperativeness_a_b + deliveryRatio_a_b;
         
         
-       % step 5 : formulation of trust value
+       % step 6 : formulation of trust value
        form_trust_a_to_b = 0;
 
 
-        % Step 6: Threshold comparison
+        % Step 7: Threshold comparison
         threshold = 5; % Trust threshold
         if form_trust_a_to_b >= threshold
             disp('Provide Services'); % Provide services if trust threshold is met
         else
             disp('Decline'); % Decline service request if trust threshold is not met
         end
-    else
-        disp('Decline'); % Decline if no valid recommendations
-    end
 end
