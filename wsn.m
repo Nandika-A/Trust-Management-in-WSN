@@ -91,3 +91,66 @@ function similarity = jaccardSimilarity(A, B)
     union = sum(A | B); % Number of unique elements
     similarity = intersection / union;
 end
+
+% Algorithm 3: Recommendation-Based Indirect Trust Evaluation
+function TrustEvaluationRecommendation(a, b)
+    % a is the trustor, b is the trustee
+    
+    % Step 2: Identify trustee (b)
+    bid = b;
+    
+    % Step 3: Check recommendations from a to b (not implemented here)
+    if isRecommended(a, b)
+        % Step 4: Get recommended nodes from a to b (not implemented here)
+        recommendedNodes = getRecommendations(a, b);
+        
+        % Step 5: Calculate aggregated trust from recommended nodes to b
+        recom_form_b_kth = 0;
+        
+        for k = recommendedNodes
+            % Calculate Compatibility of k towards b
+            compatibility_k_b = compatibility(k, b);
+            
+            % Calculate Cooperativeness of k towards b
+            cooperativeness_k_b = cooperativeness(k, b);
+            
+            % Calculate Delivery ratio of k towards b
+            deliveryRatio_k_b = deliveryRatio(k, b);
+            
+            % Sum up individual trust parameters for each recommended node
+            recom_form_b_kth = recom_form_b_kth + compatibility_k_b + cooperativeness_k_b + deliveryRatio_k_b;
+        end
+        
+        % Step 6: Data Update
+        Tupdate_a_b = recom_form_b_kth;
+        
+        % Step 7: TB certification (allocate certificate)
+        TBcert_allocate(a, b); % Allocate trust certificate
+        
+        % Step 8: Threshold comparison
+        threshold = 5; % Trust threshold
+        if Tupdate_a_b >= threshold
+            disp('Provide Services'); % Provide services if trust threshold is met
+        else
+            disp('Decline'); % Decline service request if trust threshold is not met
+        end
+    else
+        disp('Decline'); % Decline if no valid recommendations
+    end
+end
+
+% Function to check if b is recommended by a (placeholder)
+function isRec = isRecommended(a, b)
+    % Placeholder function to check if b is recommended by a
+    % Implement logic to check recommendations (not implemented here)
+    isRec = true; % Placeholder for demonstration
+    % Implement actual logic to check recommendations
+end
+
+% Function to get recommended nodes from a to b (placeholder)
+function recommendedNodes = getRecommendations(a, b)
+    % Placeholder function to retrieve recommended nodes from a to b
+    % Implement logic to get recommended nodes (not implemented here)
+    recommendedNodes = [1, 2, 3]; % Placeholder for recommended nodes
+    % Implement actual logic to get recommended nodes
+end
