@@ -105,7 +105,7 @@ function TrustEvaluation(a, b)
         if compatibility(a, b) == 0 && cooperativeness(a, b) && deliveryRatio(a, b)
           TrustEvaluationAbsolute(a, b); % Proceed to absolute trust evaluation
         end 
-        
+
     % if there are previous trust values, go within algorithm
         % Step 5: Calculate aggregated trust from a to b
         trust_a_to_b = 0;
@@ -227,4 +227,28 @@ function recommendedNodes = getRecommendations(a, b)
     % Implement logic to get recommended nodes (not implemented here)
     recommendedNodes = [1, 2, 3]; % Placeholder for recommended nodes
     % Implement actual logic to get recommended nodes
+end
+
+function isNew = isNewNode(b)
+    % Check if node b is considered a new node based on specific criteria
+    % Here, we assume a simple check based on a flag or list of known nodes
+    
+    persistent knownNodes; % Persistent variable to store known nodes
+    
+    % Initialize knownNodes if not already initialized
+    if isempty(knownNodes)
+        knownNodes = containers.Map(); % Using a map to store known nodes
+    end
+    
+    % Check if node b is in the list of known nodes
+    if isKey(knownNodes, b)
+        % Node b is not new
+        isNew = false;
+    else
+        % Node b is new
+        isNew = true;
+        
+        % Add node b to the list of known nodes
+        knownNodes(b) = true;
+    end
 end
