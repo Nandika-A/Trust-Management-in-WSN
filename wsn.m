@@ -45,6 +45,7 @@ totalResponseTime = zeros(1, noOfNodes);
 deliveryRatio = zeros(noOfNodes, noOfNodes);
 compatibility = zeros(noOfNodes, noOfNodes);
 cooperativeness = zeros(noOfNodes, noOfNodes);
+recommendationList = containers.Map();
 
 for i = 1:noOfNodes
     for j = 1:noOfNodes
@@ -213,20 +214,30 @@ function TrustEvaluationRecommendation(a, b)
     end
 end
 
-% Function to check if b is recommended by a (placeholder)
-function isRec = isRecommended(a, b)
-    % Placeholder function to check if b is recommended by a
-    % Implement logic to check recommendations (not implemented here)
-    isRec = true; % Placeholder for demonstration
-    % Implement actual logic to check recommendations
+% Function to check if b is recommended by a
+function isRec = isRecommended(a, b, recommendationList)
+    % Function to check if b is recommended by a based on a recommendation list
+    
+    % Check if node b is in the recommendation list from a
+    if isKey(recommendationList, a)
+        isRec = ismember(b, recommendationList(a));
+    else
+        isRec = false; % No recommendations from a
+    end
 end
 
-% Function to get recommended nodes from a to b (placeholder)
-function recommendedNodes = getRecommendations(a, b)
-    % Placeholder function to retrieve recommended nodes from a to b
-    % Implement logic to get recommended nodes (not implemented here)
-    recommendedNodes = [1, 2, 3]; % Placeholder for recommended nodes
-    % Implement actual logic to get recommended nodes
+
+% Function to get recommended nodes from a to b
+function recommendedNodes = getRecommendations(a, recommendationList)
+    % Function to retrieve recommended nodes from trustor node a
+    % Assumes recommendationList is a mapping from trustor nodes to recommended nodes
+    
+    % Get recommended nodes from trustor node a
+    if isKey(recommendationList, a)
+        recommendedNodes = recommendationList(a);
+    else
+        recommendedNodes = []; % No recommendations available from trustor node a
+    end
 end
 
 function isNew = isNewNode(b)
