@@ -92,6 +92,34 @@ function similarity = jaccardSimilarity(A, B)
     similarity = intersection / union;
 end
 
+% Algorithm 2: Absolute Trust Formulation of Parameters
+function TrustEvaluationAbsolute(a, b)
+    % a is the trustor, b is the trustee
+    
+    % Step 2: Identify trustee (b)
+    bid = b;
+    
+    % Step 3: Check if b is a new node
+    if isNewNode(b)
+        % Step 3: Evaluate Trust
+        compatibility_b = compatibility(a, b); % Compatibility of b towards a
+        cooperativeness_b = cooperativeness(a, b); % Cooperativeness of b towards a
+        deliveryRatio_b = deliveryRatio(a, b); % Delivery ratio of b towards a
+        
+        summation_Tform_a_b = compatibility_b + cooperativeness_b + deliveryRatio_b;
+        
+        % Step 4: Threshold comparison
+        threshold = 5;
+        if summation_Tform_a_b >= threshold
+            disp('Provide Services'); % Provide services if trust threshold is met
+        else
+            disp('Decline'); % Decline service request if trust threshold is not met
+        end
+    else
+        TrustEvaluationRecommendation(a, b); % Proceed to recommendation-based trust evaluation
+    end
+end
+
 % Algorithm 3: Recommendation-Based Indirect Trust Evaluation
 function TrustEvaluationRecommendation(a, b)
     % a is the trustor, b is the trustee
