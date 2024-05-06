@@ -46,12 +46,13 @@ deliveryRatio = zeros(noOfNodes, noOfNodes);
 compatibility = zeros(noOfNodes, noOfNodes);
 cooperativeness = zeros(noOfNodes, noOfNodes);
 recommendationList = containers.Map();
+trustValue = zeros(noOfNodes, noOfNodes);
 
 for i = 1:noOfNodes
     for j = 1:noOfNodes
         if i ~= j && neighborNode(i, j) == 1
             % Calculate Delivery Ratio (DR)
-            deliveryRatio(i, j) = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
+            deliveryratio(i, j) = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate, transmissionRate);
             
             % Calculate Compatibility using Jaccards Similarity
             nodeA = [transmissionRange, interferenceRange, transmissionRate, deliveryRate, initialEnergyLevel];
@@ -93,6 +94,9 @@ function similarity = jaccardSimilarity(A, B)
     similarity = intersection / union;
 end
 
+function DR = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate, transmissionRate)
+    deliveryRatio(i, j) = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
+end
 
 % Algorithm 1: Direct Observations-Based Trust Evaluation
 function TrustEvaluation(a, b)
@@ -103,7 +107,7 @@ function TrustEvaluation(a, b)
 
     % Step 3: check whether a and b have any previous trust values
 
-        if compatibility(a, b) == 0 && cooperativeness(a, b) && deliveryRatio(a, b)
+        if trustValue(a, b) == 0
           TrustEvaluationAbsolute(a, b); % Proceed to absolute trust evaluation
         end 
 
@@ -154,6 +158,7 @@ function TrustEvaluationAbsolute(a, b)
         deliveryRatio_b = deliveryRatio(a, b); % Delivery ratio of b towards a
         
         summation_Tform_a_b = compatibility_b + cooperativeness_b + deliveryRatio_b;
+        trustValue(a, b) = summation_Tform_a_b; % Store trust value
         
         % Step 4: Threshold comparison
         threshold = 5;
@@ -227,39 +232,21 @@ function isRec = isRecommended(a, b, recommendationList)
 end
 
 
-% Function to get recommended nodes from a to b
-function recommendedNodes = getRecommendations(a, recommendationList)
-    % Function to retrieve recommended nodes from trustor node a
-    % Assumes recommendationList is a mapping from trustor nodes to recommended nodes
-    
-    % Get recommended nodes from trustor node a
-    if isKey(recommendationList, a)
-        recommendedNodes = recommendationList(a);
-    else
-        recommendedNodes = []; % No recommendations available from trustor node a
-    end
-end
+% Specify number of interactions
+numberOfInteractions = 1000;
 
-function isNew = isNewNode(b)
-    % Check if node b is considered a new node based on specific criteria
-    % Here, we assume a simple check based on a flag or list of known nodes
+% Loop for simulating interactions
+for interaction = 1:numberOfInteractions
+    % Select random pair of nodes for interaction
+    nodeA = randi([1, noOfNodes]);
+    nodeB = randi([1, noOfNodes]);
     
-    persistent knownNodes; % Persistent variable to store known nodes
-    
-    % Initialize knownNodes if not already initialized
-    if isempty(knownNodes)
-        knownNodes = containers.Map(); % Using a map to store known nodes
-    end
-    
-    % Check if node b is in the list of known nodes
-    if isKey(knownNodes, b)
-        % Node b is not new
-        isNew = false;
-    else
-        % Node b is new
-        isNew = true;
-        
-        % Add node b to the list of known nodes
-        knownNodes(b) = true;
+    % Check if nodes are neighbors and not the same node
+    if neighborNode(nodeA, nodeB) == 1 && nodeA ~= nodeB
+        % Simulate interaction between nodeA and nodeB
+        TrustEvaluation(nodeA, nodeB);
+        % plot degree of trust using trustValue(a, b)
+        % plot delivery ratio using deliveryRatio(a, b)
+        % plot successful interactions according to the algo result
     end
 end
