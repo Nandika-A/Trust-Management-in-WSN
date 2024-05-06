@@ -22,7 +22,7 @@ nodeYLoc = rand(1, noOfNodes) * simArea; % Random y-coordinates within simulatio
 newNode = containers.Map();
 for i = 1:noOfNodesNodes
     % Initialize the values randomly as zeros and ones
-    newNode(i) = randi([0, 1]);
+    newNode(num2str(i)) = randi([0, 1]);
 end
 
 % Define a mapping called recommendedNodes
