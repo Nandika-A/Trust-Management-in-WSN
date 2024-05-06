@@ -20,14 +20,14 @@ nodeYLoc = rand(1, noOfNodes) * simArea; % Random y-coordinates within simulatio
 
 % Define a mapping called newNode
 newNode = containers.Map();
-for i = 1:noOfNodesNodes
+for i = 1:noOfNodes
     % Initialize the values randomly as zeros and ones
-    newNode(i) = randi([0, 1]);
+    newNode(num2str(i)) = randi([0, 1]);
 end
 
 % Define a mapping called recommendedNodes
 recommendedNodes = containers.Map();
-recommendedNodes(i) = randi([1, noOfNodes], 1, noOfNodes);
+recommendedNodes(num2str(i)) = randi([1, noOfNodes], 1, noOfNodes);
 
 % Neighbor Node Determination
 neighborNode = zeros(noOfNodes, noOfNodes);
@@ -64,7 +64,7 @@ for i = 1:noOfNodes
     for j = 1:noOfNodes
         if i ~= j && neighborNode(i, j) == 1
             % Calculate Delivery Ratio (DR)
-            deliveryratio(i, j) = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate, transmissionRate);
+            deliveryRatio(i, j) = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate, transmissionRate);
             
             % Calculate Compatibility using Jaccards Similarity
             nodeA = [transmissionRange, interferenceRange, transmissionRate, deliveryRate, initialEnergyLevel];
@@ -94,7 +94,7 @@ for i = 1:noOfNodes
             averageResponseTime = sum(totalResponseTime) / noOfNodes;
 
             % Calculate Cooperativeness
-            cooperativeness(i, j) = successRate + reciprocityRate + avgResponseTime;
+            cooperativeness(i, j) = successRate + reciprocityRate + averageResponseTime;
         end
     end
 end
@@ -107,7 +107,7 @@ function similarity = jaccardSimilarity(A, B)
 end
 
 function DR = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate, transmissionRate)
-    deliveryRatio(i, j) = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
+    DR = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
 end
 
 % Algorithm 1: Direct Observations-Based Trust Evaluation
@@ -193,12 +193,12 @@ function TrustEvaluationRecommendation(a, b)
     % Step 3: Check recommendations from a to b (not implemented here)
     if isRecommended(a, b)
         % Step 4: Get recommended nodes from a to b (not implemented here)
-        recommendedNodes = getRecommendations(a, b);
+        recommended = getRecommendations(a, b);
         
         % Step 5: Calculate aggregated trust from recommended nodes to b
         recom_form_b_kth = 0;
         
-        for k = recommendedNodes
+        for k = recommended
             % Calculate Compatibility of k towards b
             compatibility_k_b = compatibility(k, b);
             
@@ -233,7 +233,7 @@ function TrustEvaluationRecommendation(a, b)
 end
 
 % Function to check if b is recommended by a
-function isRec = isRecommended(a, b, recommendationList)
+function isRec = isRecommended(a, b)
     % Function to check if b is recommended by a based on a recommendation list
     
     % Check if node b is in the recommendation list from a
