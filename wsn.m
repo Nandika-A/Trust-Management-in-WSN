@@ -28,7 +28,6 @@ end
 % Define a mapping called recommendedNodes
 recommendedNodes = containers.Map();
 recommendedNodes(i) = randi([1, noOfNodes], 1, noOfNodes);
-end
 
 % Neighbor Node Determination
 neighborNode = zeros(noOfNodes, noOfNodes);
