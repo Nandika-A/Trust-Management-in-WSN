@@ -142,7 +142,7 @@ function TrustEvaluation(a, b)
         trust_a_to_b = compatibility_a_b + cooperativeness_a_b + deliveryRatio_a_b;
         
         % Step 7: Threshold comparison
-        threshold = 5; % Trust threshold
+        threshold = 25; % Trust threshold
         if trust_a_to_b >= threshold
             success = 1;
             disp('Provide Services'); % Provide services if trust threshold is met
@@ -171,7 +171,7 @@ function TrustEvaluationAbsolute(a, b)
         trustValue(a, b) = summation_Tform_a_b; % Store trust value
         
         % Step 4: Threshold comparison
-        threshold = 5;
+        threshold = 25;
         if summation_Tform_a_b >= threshold
             success = 1;
             disp('Provide Services'); % Provide services if trust threshold is met
@@ -220,7 +220,7 @@ function TrustEvaluationRecommendation(a, b)
         TBcert_allocate(a, b); % Allocate trust certificate
         
         % Step 8: Threshold comparison
-        threshold = 5; % Trust threshold
+        threshold = 25; % Trust threshold
         if Tupdate_a_b >= threshold
             success = 1;
             disp('Provide Services'); % Provide services if trust threshold is met
@@ -262,6 +262,8 @@ for interaction = 1:numberOfInteractions
         success = 0;
         % Simulate interaction between nodeA and nodeB
         TrustEvaluation(nodeA, nodeB);
+        deliveryRate_new = deliveryRate + randi([-2, 2]); % Random delivery rate change
+        deliveryRatio(nodeA, nodeB) = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate_new, transmissionRate)
                 
         % Store values in array
         trustValues(interaction) = trustValue(nodeA, nodeB);
