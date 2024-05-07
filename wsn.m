@@ -3,12 +3,19 @@ clc;
 
 % Simulation Parameters
 simArea = 1000; % Simulation area size (square area in meters)
-noOfNodes = 600; % Number of nodes
+noOfNodes = 600; % Number of nodes in the network
 transmissionRange = 25; % Transmission range in meters
 interferenceRange = 30; % Interference range in meters
 transmissionRate = 4; % Transmission rate in Mbps
 deliveryRate = 8; % Delivery rate (packets per 30 seconds)
 initialEnergyLevel = 3; % Initial energy level
+numberOfInteractions = 10; % Number of interactions
+
+% Initialize variables
+deliveryRatios = zeros(1, numberOfInteractions);
+successfulInteraction_mat = zeros(1, numberOfInteractions);
+trustValues = zeros(1, numberOfInteractions);
+energy = 3; % Initial energy level
 
 % Malicious Node Percentage
 maliciousPercentage = 30; % Percentage of nodes that are malicious
@@ -17,7 +24,7 @@ noOfMaliciousNodes = ceil(maliciousPercentage / 100 * noOfNodes);
 % Node Deployment
 nodeXLoc = rand(1, noOfNodes) * simArea; % Random x-coordinates within simulation area
 nodeYLoc = rand(1, noOfNodes) * simArea; % Random y-coordinates within simulation area
-global newNode;
+
 % Define a mapping called newNode
 newNode = containers.Map();
 for i = 1:noOfNodes
@@ -25,7 +32,6 @@ for i = 1:noOfNodes
     newNode(num2str(i)) = randi([0, 1]);
 end
 
-global recommendedNodes;
 % Define a mapping called recommendedNodes
 recommendedNodes = containers.Map();
 recommendedNodes(num2str(i)) = randi([1, noOfNodes], 1, noOfNodes);
@@ -57,6 +63,7 @@ totalResponseTime = zeros(1, noOfNodes);
 deliveryRatio = zeros(noOfNodes, noOfNodes);
 compatibility = zeros(noOfNodes, noOfNodes);
 cooperativeness = zeros(noOfNodes, noOfNodes);
+trustValue = zeros(noOfNodes, noOfNodes);
 recommendationList = containers.Map();
 
 % Specify number of interactions
@@ -64,7 +71,6 @@ numberOfInteractions = 100;
 trustValues = zeros(1, numberOfInteractions);
 deliveryRatios = zeros(1, numberOfInteractions);
 successfulInteraction_mat = zeros(1, numberOfInteractions);
-trustValue = zeros(noOfNodes, noOfNodes);
 
 % Function to calculate Jaccards Similarity
 function similarity = jaccardSimilarity(A, B)
@@ -77,8 +83,8 @@ function DR = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRa
     DR = ((transmissionRange / interferenceRange)^2) * (deliveryRate / transmissionRate);
 end
 
-function isNew = isNewNode(a)
-    if newNode(a) == 1
+function isNew = isNewNode(a, newNode)
+    if newNode(num2str(a)) == 1
         isNew = 1;
     else
         isNew = 0;
@@ -86,12 +92,12 @@ function isNew = isNewNode(a)
 end
 
 % Function to check if b is recommended by a
-function isRec = isRecommended(a, b)
+function isRec = isRecommended(a, b, recommendedNodes)
     % Function to check if b is recommended by a based on a recommendation list
     
     % Check if node b is in the recommendation list from a
-    if isKey(recommendedNodes, a)
-        isRec = ismember(b, recommendedNodes(a));
+    if isKey(recommendedNodes, num2str(a))
+        isRec = ismember(num2str(b), recommendedNodes(num2str(a)));
     else
         isRec = false; % No recommendations from a
     end
@@ -99,7 +105,6 @@ end
 
 for i = 1:noOfNodes
     for j = 1:noOfNodes
-        if i ~= j && neighborNode(i, j) == 1
             % Calculate Delivery Ratio (DR)
             deliveryRatio(i, j) = deliveryRatioCalc(transmissionRange, interferenceRange, deliveryRate, transmissionRate);
             
@@ -132,12 +137,11 @@ for i = 1:noOfNodes
 
             % Calculate Cooperativeness
             cooperativeness(i, j) = successRate + reciprocityRate + averageResponseTime;
-        end
-    end
+     end
 end
 
 % Algorithm 1: Direct Observations-Based Trust Evaluation
-function success = TrustEvaluation(a, b, trustValue)
+function success = TrustEvaluation(a, b, trustValue, newNode, recommendedNodes, compatibility, cooperativeness, deliveryRatio)
     % a is the trustor, b is the trustee
 
     % Step 2: Identify trustee (b)
@@ -146,7 +150,7 @@ function success = TrustEvaluation(a, b, trustValue)
     % Step 3: check whether a and b have any previous trust values
 
         if trustValue(a, b) == 0
-          success = TrustEvaluationAbsolute(a, b, trustValue); % Proceed to absolute trust evaluation
+          success = TrustEvaluationAbsolute(a, b, trustValue, newNode, recommendedNodes, compatibility, cooperativeness, deliveryRatio); % Proceed to absolute trust evaluation
         end 
 
     % if there are previous trust values, go within algorithm
@@ -158,7 +162,7 @@ function success = TrustEvaluation(a, b, trustValue)
         compatibility_a_b = compatibility(a, b);
 
         % Calculate Cooperativeness of a towards b
-        cooperativeness_a_b = cooperativeness(a, b);
+        cooperativeness_a_b = cooperativeness(1, 1);
 
         % Calculate Delivery ratio of a towards b
         deliveryRatio_a_b = deliveryRatio(a, b);
@@ -167,7 +171,7 @@ function success = TrustEvaluation(a, b, trustValue)
         trust_a_to_b = compatibility_a_b + cooperativeness_a_b + deliveryRatio_a_b;
         
         % Step 7: Threshold comparison
-        threshold = 10; % Trust threshold
+        threshold = 5; % Trust threshold
         if trust_a_to_b >= threshold
             success = 1;
             disp('Provide Services'); % Provide services if trust threshold is met
@@ -179,24 +183,24 @@ function success = TrustEvaluation(a, b, trustValue)
 
 
 % Algorithm 2: Absolute Trust Formulation of Parameters
-function success = TrustEvaluationAbsolute(a, b, trustValue)
+function success = TrustEvaluationAbsolute(a, b, trustValue, newNode, recommendedNodes, compatibility, cooperativeness, deliveryRatio)
     % a is the trustor, b is the trustee
     
     % Step 2: Identify trustee (b)
     bid = b;
     
     % Step 3: Check if b is a new node
-    if isNewNode(b)
+    if isNewNode(b, newNode)
         % Step 3: Evaluate Trust
         compatibility_b = compatibility(a, b); % Compatibility of b towards a
-        cooperativeness_b = cooperativeness(a, b); % Cooperativeness of b towards a
+        cooperativeness_b = cooperativeness(1, 1); % Cooperativeness of b towards a
         deliveryRatio_b = deliveryRatio(a, b); % Delivery ratio of b towards a
         
         summation_Tform_a_b = compatibility_b + cooperativeness_b + deliveryRatio_b;
         trustValue(a, b) = summation_Tform_a_b; % Store trust value
         
         % Step 4: Threshold comparison
-        threshold = 10;
+        threshold = 5;
         if summation_Tform_a_b >= threshold
             success = 1;
             disp('Provide Services'); % Provide services if trust threshold is met
@@ -205,21 +209,21 @@ function success = TrustEvaluationAbsolute(a, b, trustValue)
             disp('Decline'); % Decline service request if trust threshold is not met
         end
     else
-        success = TrustEvaluationRecommendation(a, b, trustValue); % Proceed to recommendation-based trust evaluation
+        success = TrustEvaluationRecommendation(a, b, trustValue, recommendedNodes, compatibility, cooperativeness, deliveryRatio); % Proceed to recommendation-based trust evaluation
     end
 end
 
 % Algorithm 3: Recommendation-Based Indirect Trust Evaluation
-function success = TrustEvaluationRecommendation(a, b, trustValue)
+function success = TrustEvaluationRecommendation(a, b, trustValue, recommendedNodes, compatibility, cooperativeness, deliveryRatio)
     % a is the trustor, b is the trustee
     
     % Step 2: Identify trustee (b)
     bid = b;
     
     % Step 3: Check recommendations from a to b (not implemented here)
-    if isRecommended(a, b)
+    if isRecommended(a, b, recommendedNodes)
         % Step 4: Get recommended nodes from a to b (not implemented here)
-        recommended = recommendedNodes(b);
+        recommended = recommendedNodes(b, recommendedNodes);
         
         % Step 5: Calculate aggregated trust from recommended nodes to b
         recom_form_b_kth = 0;
@@ -246,7 +250,7 @@ function success = TrustEvaluationRecommendation(a, b, trustValue)
         TBcert_allocate(a, b); % Allocate trust certificate
         
         % Step 8: Threshold comparison
-        threshold = 10; % Trust threshold
+        threshold = 5; % Trust threshold
         if Tupdate_a_b >= threshold
             success = 1;
             disp('Provide Services'); % Provide services if trust threshold is met
@@ -255,53 +259,44 @@ function success = TrustEvaluationRecommendation(a, b, trustValue)
             disp('Decline'); % Decline service request if trust threshold is not met
         end
     else
+        success = 0;
         disp('Decline'); % Decline if no valid recommendations
     end
 end
 
-energy = initialEnergyLevel;
-% Loop for simulating interactions
 for interaction = 1:numberOfInteractions
-    % Select random pair of nodes for interaction
     nodeA = randi([1, noOfNodes]);
     nodeB = randi([1, noOfNodes]);
-    
-    % Check if nodes are neighbors and not the same node
-    if neighborNode(nodeA, nodeB) == 1 && nodeA ~= nodeB
 
-        % Simulate the algorithm
-        success = TrustEvaluation(nodeA, nodeB, trustValue);
-
-        % Trust updation based on algorithm results
+        successfulInteraction_mat(interaction) = TrustEvaluation(nodeA, nodeB, trustValue, newNode, recommendedNodes, compatibility, cooperativeness, deliveryRatio);
         drate = deliveryRate + randi([-1, 1]);
         trate = transmissionRate + randi([-1, 1]);
         A = [transmissionRange, interferenceRange, trate, drate, energy];
         B = [transmissionRange, interferenceRange, transmissionRate, deliveryRate, initialEnergyLevel];
-        compatibility = jaccardSimilarity(A, B);
-        DR = ((transmissionRange / interferenceRange)^2) * (drate / trate);
+        intersection = sum(A & B); % Number of common elements
+        union = sum(A | B); % Number of unique element
+        compatibility_val =  intersection / union;
         rt = randi([0, 5]);
-
-        if(success == 1)
+        if(successfulInteraction_mat(interaction) == 1)
              energy = energy + 1;
              cooperativeness = 1 + rt;
         else
             energy = energy - 1;
             cooperativeness = rt;
         end
-
-        % Populate the matrices to plot
+        DR = ((transmissionRange / interferenceRange)^2) * (drate / trate);
         deliveryRatios(interaction) = DR + energy;
-        trustValues(interaction) = DR + compatibility + energy + cooperativeness;
-        successfulInteraction_mat(interaction) = success;
-    end
+        deliveryRatio(nodeA, nodeB) = deliveryRatios(interaction);
+        trustValues(interaction) = DR + compatibility_val + energy + cooperativeness;
+        trustValue(nodeA, nodeB) = trustValues(interaction);
 end
 
-% Plot trustValue against number of interactions
-subplot(3, 1, 3);
-plot(1:numberOfInteractions, trustValues);
+% Plot successfulInteractions against the number of interactions
+subplot(3, 1, 1);
+plot(1:numberOfInteractions, successfulInteraction_mat);
 xlabel('Number of Interactions');
-ylabel('Trust Value');
-title('Trust Value vs Number of Interactions');
+ylabel('Successful Interactions');
+title('Successful Interactions vs Number of Interactions');
 
 % Plot deliveryRatio against number of interactions
 subplot(3, 1, 2);
@@ -310,9 +305,9 @@ xlabel('Number of Interactions');
 ylabel('Delivery Ratio');
 title('Delivery Ratio vs Number of Interactions');
 
-% Plot successfulInteractions against the number of interactions
-subplot(3, 1, 1);
-plot(1:numberOfInteractions, successfulInteraction_mat);
+% Plot trustValue against number of interactions
+subplot(3, 1, 3);
+plot(1:numberOfInteractions, trustValues);
 xlabel('Number of Interactions');
-ylabel('Successful Interactions');
-title('Successful Interactions vs Number of Interactions');
+ylabel('Trust Value');
+title('Trust Value vs Number of Interactions');
