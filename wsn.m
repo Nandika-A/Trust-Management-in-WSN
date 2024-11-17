@@ -9,8 +9,7 @@ interferenceRange = 30; % Interference range in meters
 transmissionRate = 4; % Transmission rate in Mbps
 deliveryRate = 8; % Delivery rate (packets per 30 seconds)
 initialEnergyLevel = 3; % Initial energy level
-numberOfInteractions = 10; % Number of interactions
-
+numberOfInteractions = 300; %Number of interactions
 % Initialize variables
 deliveryRatios = zeros(1, numberOfInteractions);
 successfulInteraction_mat = zeros(1, numberOfInteractions);
@@ -67,7 +66,6 @@ trustValue = zeros(noOfNodes, noOfNodes);
 recommendationList = containers.Map();
 
 % Specify number of interactions
-numberOfInteractions = 100;
 trustValues = zeros(1, numberOfInteractions);
 deliveryRatios = zeros(1, numberOfInteractions);
 successfulInteraction_mat = zeros(1, numberOfInteractions);
@@ -223,7 +221,7 @@ function success = TrustEvaluationRecommendation(a, b, trustValue, recommendedNo
     % Step 3: Check recommendations from a to b (not implemented here)
     if isRecommended(a, b, recommendedNodes)
         % Step 4: Get recommended nodes from a to b (not implemented here)
-        recommended = recommendedNodes(b, recommendedNodes);
+        recommended = recommendedNodes(b);
         
         % Step 5: Calculate aggregated trust from recommended nodes to b
         recom_form_b_kth = 0;
@@ -281,7 +279,7 @@ for interaction = 1:numberOfInteractions
              energy = energy + 1;
              cooperativeness = 1 + rt;
         else
-            energy = energy - 1;
+            energy = energy - 0.9;
             cooperativeness = rt;
         end
         DR = ((transmissionRange / interferenceRange)^2) * (drate / trate);
@@ -290,6 +288,16 @@ for interaction = 1:numberOfInteractions
         trustValues(interaction) = DR + compatibility_val + energy + cooperativeness;
         trustValue(nodeA, nodeB) = trustValues(interaction);
 end
+maxTrustValue = max(trustValues)
+maxDeliveryRatio = max(deliveryRatios)
+successfulInteractions = sum(successfulInteraction_mat == 1);
+% Calculate Overhead Ratio
+overheadRatio = (numberOfInteractions - successfulInteractions) / numberOfInteractions;
+fprintf('The number of successful interactions is: %d\n', successfulInteractions);
+fprintf('Maximum trust value among all the interactions is: %d\n', maxTrustValue);
+fprintf('Maximum delivery ratio among all the interactions is: %d\n', maxDeliveryRatio);
+% Display the Overhead Ratio
+fprintf('The Overhead Ratio of the Trust Agent is: %.2f\n', overheadRatio);
 
 % Plot successfulInteractions against the number of interactions
 subplot(3, 1, 1);
