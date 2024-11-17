@@ -9,7 +9,7 @@ interferenceRange = 30; % Interference range in meters
 transmissionRate = 4; % Transmission rate in Mbps
 deliveryRate = 8; % Delivery rate (packets per 30 seconds)
 initialEnergyLevel = 3; % Initial energy level
-numberOfInteractions = 100; % Number of interactions
+numberOfInteractions = 300; % Number of interactions
 % Initialize variables
 deliveryRatios = zeros(1, numberOfInteractions);
 successfulInteraction_mat = zeros(1, numberOfInteractions);
@@ -78,7 +78,6 @@ trustValue = zeros(noOfNodes, noOfNodes);
 recommendationList = containers.Map();
 
 % Specify number of interactions
-numberOfInteractions = 100;
 trustValues = zeros(1, numberOfInteractions);
 deliveryRatios = zeros(1, numberOfInteractions);
 successfulInteraction_mat = zeros(1, numberOfInteractions);
@@ -323,10 +322,14 @@ for interaction = 1:numberOfInteractions
 end
 maxTrustValue = max(trustValues)
 maxDeliveryRatio = max(deliveryRatios)
-numOnes = sum(successfulInteraction_mat == 1);
-fprintf('The number of successful interactions is: %d\n', numOnes);
+successfulInteractions = sum(successfulInteraction_mat == 1);
+% Calculate Overhead Ratio
+overheadRatio = (numberOfInteractions - successfulInteractions) / numberOfInteractions;
+fprintf('The number of successful interactions is: %d\n', successfulInteractions);
 fprintf('Maximum trust value among all the interactions is: %d\n', maxTrustValue);
 fprintf('Maximum delivery ratio among all the interactions is: %d\n', maxDeliveryRatio);
+% Display the Overhead Ratio
+fprintf('The Overhead Ratio of the Trust Agent is: %.2f\n', overheadRatio);
 
 % Plot successfulInteractions against the number of interactions
 subplot(3, 1, 1);
