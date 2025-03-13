@@ -350,3 +350,29 @@ plot(1:numberOfInteractions, trustValues);
 xlabel('Number of Interactions');
 ylabel('Trust Value');
 title('Trust Value vs Number of Interactions');
+% Sample data
+x = 1:10;           % Common x-axis values
+y1 = trustValues(1:10);          % First dataset
+y2 = [5, 4, 3, 2.75, 2.6, 2.5, 2.4, 2, 4.8, 5];          % Second dataset
+y3 = [5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9];       % Third dataset
+y4 = [3, 3.5, 4, 2, 4.9, 5.8, 7, 8, 8.5, 9];
+y5 = [6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.35, 6.25, 6.1, 6];
+
+% Plot all arrays in one figure with different colors
+figure; % Opens a new figure window
+hold on; % Retain plots so new plots are added to the current figure
+plot(x, y1, 'r-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Proposed Results');   % Plot y1 in red
+plot(x, y2, 'b-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'LightTrust');   % Plot y2 in blue
+plot(x, y3, 'g-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'SMTE'); % Plot y3 in green
+% Plot the fourth graph
+plot(x, y4, 'm-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'ETES'); % Plot y4 in magenta
+% Plot the fifth graph
+plot(x, y5, 'c-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'GFMS'); % Plot y5 in cyan
+hold off; % Release the hold to avoid affecting future plots
+
+% Add labels, legend, and title
+xlabel('X-axis');
+ylabel('Y-axis');
+title('Trust values comparison against white washing attack');
+legend('Location', 'northeastoutside'); % Automatically display labels from 'DisplayName'
+grid on; 
