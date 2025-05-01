@@ -9,7 +9,7 @@ interferenceRange = 30;
 transmissionRate = 4;
 deliveryRate = 8;
 initialEnergyLevel = 3;
-numberOfInteractions = 100;
+numberOfInteractions = 300;
 maliciousPercentage = 30;
 noOfMaliciousNodes = ceil(maliciousPercentage / 100 * noOfNodes);
 
@@ -148,7 +148,7 @@ for i = 1:noOfNodes
             successfulInteractions = successfulInteractions + randi([0,1]);
             
             % Track response time (random value for demonstration)
-            responseTime = randi([2, 5]); % Placeholder for actual response time
+            responseTime = randi([2, 4]); % Placeholder for actual response time
             totalResponseTime(i) = totalResponseTime(i) + responseTime;
             
             % Check reciprocity (assume all interactions are reciprocated for demonstration)
@@ -217,7 +217,7 @@ end
 function success = TrustEvaluation(a, b, trustValue, newNode, recommendedNodes, compatibility, cooperativeness, deliveryRatio, clusterHeads, clusterMembership, isMalicious, nodeInteractionCount, neighborNode)
     % Apply malicious penalty if detected
     if isMalicious(b) == 1 && nodeInteractionCount(b) > 5
-        maliciousPenalty = 1;
+        maliciousPenalty = 0.7;
     else
         maliciousPenalty = 0;
     end
@@ -246,7 +246,7 @@ function success = TrustEvaluationDirect(a, b, trustValue, compatibility, cooper
     if clusterMembership(a) == clusterMembership(b)
         clusterBonus = 2.5;
     end
-    if b == clusterHeads(clusterMembership(b))
+    if b == clusterHeads(clusterMembership(b)) || trustValue(clusterHeads(clusterMembership(b)), b) > 5.0
         clusterBonus = clusterBonus + 1;
     end
     
@@ -270,7 +270,7 @@ function success = TrustEvaluationAbsolute(a, b, trustValue, clusterMembership, 
     if clusterMembership(a) == clusterMembership(b)
         clusterBonus = 2;
     end
-    if b == clusterHeads(clusterMembership(b))
+    if b == clusterHeads(clusterMembership(b)) || trustValue(clusterHeads(clusterMembership(b)), b) > 5.0
         clusterBonus = clusterBonus + 1;
     end
     
@@ -299,7 +299,7 @@ function success = TrustEvaluationRecommendation(a, b, trustValue, recommendedNo
         end
     end
 
-    if ch_b == b
+    if ch_b == b || trustValue(ch_b, b) > 5.0
         cluster_trust = cluster_trust + 2.0; % Bonus for cluster head
     end
     
@@ -428,7 +428,7 @@ for interaction = 1:numberOfInteractions
     currentCluster = clusterMembership(nodeA);
     destinationCluster = clusterMembership(nodeB);
     path = [];
-    maxHops = 20; % slightly increased to allow better finding
+    maxHops = 20; % to avoid infinite loop
     
     if currentCluster == destinationCluster
         % Intra-cluster routing
@@ -542,8 +542,8 @@ for interaction = 1:numberOfInteractions
     
     % Update energy based on interaction result
     if successfulInteraction_mat(interaction) == 1
-        nodeEnergy(nodeA) = min(nodeEnergy(nodeA) + 1.5, 10);
-        nodeEnergy(nodeB) = min(nodeEnergy(nodeB) + 1.5, 10);
+        nodeEnergy(nodeA) = min(nodeEnergy(nodeA) + 2, 10);
+        nodeEnergy(nodeB) = min(nodeEnergy(nodeB) + 2, 10);
         
         % Update pheromone for ACO
         % Dynamic pheromone update after success
@@ -554,7 +554,7 @@ for interaction = 1:numberOfInteractions
         for p = 1:length(path)-1
             sender = path(p);
             receiver = path(p+1);
-            pheromone(sender, receiver) = pheromone(sender, receiver) + 0.2 * (trustValue(sender, receiver)/10);
+            pheromone(sender, receiver) = pheromone(sender, receiver) + 0.4 * (trustValue(sender, receiver)/10);
         end
 
         
@@ -580,7 +580,7 @@ for interaction = 1:numberOfInteractions
 
     
     % Apply exponential smoothing to delivery ratio
-    alpha = 0.3; % Smoothing factor
+    alpha = 0.6; % Smoothing factor
     if interaction > 1
         DR = alpha * DR + (1 - alpha) * deliveryRatios(interaction - 1);
     end
@@ -593,7 +593,7 @@ for interaction = 1:numberOfInteractions
     if successfulInteraction_mat(interaction)
         baseIncrement = 0.6 + 0.4 * (successRate); % Successful and stable = more bonus
     else
-        baseIncrement = -0.4 * (1 - successRate); % Failures punish more if failure trend
+        baseIncrement = -0.01; % Failures punish more if failure trend
     end
 
     % Modify by path quality
@@ -610,19 +610,19 @@ for interaction = 1:numberOfInteractions
     
     % If malicious behavior suspected, cap the increase
     if isMalicious(nodeA) || isMalicious(nodeB)
-        trustChangeRate = min(trustChangeRate, 0.2); % Trust rises slowly for malicious nodes
+        trustChangeRate = min(trustChangeRate, 0.4); % Trust rises slowly for malicious nodes
     end
     
     % Apply update with boundaries
-    trustValue(nodeA, nodeB) = max(0, min(10, trustValue(nodeA, nodeB) + trustChangeRate));
+    trustValue(nodeA, nodeB) = max(0, min(20, trustValue(nodeA, nodeB) + trustChangeRate));
     trustValues(interaction) = trustValue(nodeA, nodeB);
 
 
     % Scale increment based on history to promote stability
     if interactionHistory(nodeA, nodeB) > 5
-        successTrend = successRate > 0.6; % Check if generally successful
+        successTrend = successRate > 0.5; % Check if generally successful
         if successTrend
-            trustChangeRate = baseIncrement * 1.2; % Adjust change rate for stable relationships
+            trustChangeRate = baseIncrement * 1.5; % Adjust change rate for stable relationships
         else
             trustChangeRate = baseIncrement;
         end
@@ -634,17 +634,17 @@ for interaction = 1:numberOfInteractions
     neighborB = find(neighborNode(nodeB, :) == 1);
     
     for n = neighborA
-        trustValue(n, nodeB) = min(10, trustValue(n, nodeB) + 0.1);
+        trustValue(n, nodeB) = min(10, trustValue(n, nodeB) + 0.2);
     end
     
     for n = neighborB
-        trustValue(n, nodeA) = min(10, trustValue(n, nodeA) + 0.1);
+        trustValue(n, nodeA) = min(10, trustValue(n, nodeA) + 0.2);
     end
 
     
     % Apply cluster-based trust bonus
     if clusterMembership(nodeA) == clusterMembership(nodeB)
-        trustChangeRate = trustChangeRate * 1.2; % Cluster bonus
+        trustChangeRate = trustChangeRate * 2; % Cluster bonus
     end
     
     % Apply trust update
@@ -653,9 +653,9 @@ for interaction = 1:numberOfInteractions
     
     % Update trust for nodes in the path
     if successRate > 0.7
-        trustBoost = 0.03; % bigger boost
+        trustBoost = 0.5; % bigger boost
     else
-        trustBoost = 0.01; % small cautious boost
+        trustBoost = 0.2; % small cautious boost
     end
     for p = 1:length(path)-1
         sender = path(p);
@@ -663,7 +663,7 @@ for interaction = 1:numberOfInteractions
         trustValue(sender, receiver) = min(10, trustValue(sender, receiver) + trustBoost);
     end
 
-    alpha_smooth = 0.3; % very low alpha for no spikes in trust of the system for stability
+    alpha_smooth = 0.6; % very low alpha for no spikes in trust of the system for stability
     if interaction > 1
     trustValues(interaction) = alpha_smooth * trustValues(interaction) + (1 - alpha_smooth) * trustValues(interaction-1);
     trustValue(nodeA, nodeB) = trustValues(interaction);
@@ -686,6 +686,13 @@ for interaction = 1:numberOfInteractions
         % Red Fox Optimization for cluster head selection
         for k = 1:noOfClusters
             members = clusters{k};
+            for i = 1:length(members)
+                for j = 1:length(members)
+                    if i ~= j && isMalicious(members(i)) == 0 && isMalicious(members(j)) == 0
+                        trustValue(members(i), members(j)) = min(10, trustValue(members(i), members(j)) + 0.2);
+                    end
+                end
+            end
             
             % Check if current cluster head has low energy
             if nodeEnergy(clusterHeads(k)) < 0.2 * initialEnergyLevel
