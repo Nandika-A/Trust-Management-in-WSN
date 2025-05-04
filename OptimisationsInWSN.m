@@ -622,13 +622,10 @@ for interaction = 1:numberOfInteractions
     if interactionHistory(nodeA, nodeB) > 5
         successTrend = successRate > 0.5; % Check if generally successful
         if successTrend
-            trustChangeRate = baseIncrement * 1.5; % Adjust change rate for stable relationships
-        else
-            trustChangeRate = baseIncrement;
+            trustChangeRate = trustChangeRate * 1.5; % Adjust change rate for stable relationships
         end
-    else
-        trustChangeRate = baseIncrement;
     end
+   
 
     neighborA = find(neighborNode(nodeA, :) == 1);
     neighborB = find(neighborNode(nodeB, :) == 1);
@@ -809,4 +806,23 @@ title('Cluster Formation using Red Fox Optimization');
 xlabel('X position (m)');
 ylabel('Y position (m)');
 legend('Regular Nodes', 'Malicious Nodes', 'Cluster Heads');
-hold off;
+% Sample data
+x = 1:10;           % Common x-axis values
+y1 = deliveryRatios(1:10)/(max(deliveryRatios(1:10)));          % First dataset
+y2 = [0.8, 0.6, 0.65, 0.625, 0.825, 0.835, 0.845, 0.855, 0.865, 0.875];          % Second dataset
+y3 = [0.7, 0.8, 0.7, 0.75, 0.74, 0.73, 0.71, 0.78, 0.77, 0.79];       % Third dataset
+
+% Plot all arrays in one figure with different colors
+figure; % Opens a new figure window
+hold on; % Retain plots so new plots are added to the current figure
+plot(x, y1, 'r-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Proposed Results');   % Plot y1 in red
+plot(x, y2, 'b-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'AHP');   % Plot y2 in blue
+plot(x, y3, 'g-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'TERP'); % Plot y3 in green
+hold off; % Release the hold to avoid affecting future plots
+
+% Add labels, legend, and title
+xlabel('Interactions');
+ylabel('Delivery Ratio');
+title('Performance Comparison of Delivery Ratio in 10 interactions with 10% malicious nodes');
+legend('Location', 'northeastoutside'); % Automatically display labels from 'DisplayName'
+grid on; 
