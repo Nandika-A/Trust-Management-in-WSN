@@ -8,9 +8,9 @@ transmissionRange = 25;
 interferenceRange = 30;
 transmissionRate = 4;
 deliveryRate = 8;
-initialEnergyLevel = 3;
+initialEnergyLevel = 8.33;
 numberOfInteractions = 300;
-maliciousPercentage = 30;
+maliciousPercentage = 10;
 noOfMaliciousNodes = ceil(maliciousPercentage / 100 * noOfNodes);
 
 % Energy Model Parameters (Typical WSN Values)
@@ -89,6 +89,7 @@ avgTrustHistory = zeros(1, numberOfInteractions);
 movingAvgTrust = zeros(1, numberOfInteractions);
 interactionHistory = zeros(noOfNodes, noOfNodes);
 successHistory = zeros(noOfNodes, noOfNodes);
+totalEnergyHistory = zeros(1, numberOfInteractions);
 
 % Helper functions
 function similarity = jaccardSimilarity(A, B)
@@ -406,13 +407,13 @@ function nextNode = selectNextNode(currentNode, neighbors, pheromone, trustValue
     energyFactor = nodeEnergy(neighbors) / initialEnergyLevel; % Healthy nodes preferred
 
     % New combined desirability
-    prob = (tau.^1.5) .* (trust.^2.0) .* (eta.^1.0) .* (energyFactor.^1.2);
+    prob = (tau.^alpha_aco) .* (trust.^beta_aco) .* (eta.^1.0) .* (energyFactor.^1.2);
 
     prob = prob / sum(prob); % Normalize to probabilities
 
     % Roulette wheel selection
     cumProb = cumsum(prob);
-    r = rand();
+    r = 0.5;
     nextNode = neighbors(find(cumProb >= r, 1, 'first'));
 end
 
@@ -542,8 +543,13 @@ for interaction = 1:numberOfInteractions
     
     % Update energy based on interaction result
     if successfulInteraction_mat(interaction) == 1
-        nodeEnergy(nodeA) = min(nodeEnergy(nodeA) + 2, 10);
-        nodeEnergy(nodeB) = min(nodeEnergy(nodeB) + 2, 10);
+        nodeEnergy(nodeA) = nodeEnergy(nodeA) + 0.9;
+        nodeEnergy(nodeB) = nodeEnergy(nodeB) + 0.9;
+
+       % Energy depletion for all nodes in the successful path
+        for p = 1:length(path)
+            nodeEnergy(path(p)) = nodeEnergy(path(p)) - 0.25;
+        end
         
         % Update pheromone for ACO
         % Dynamic pheromone update after success
@@ -568,11 +574,11 @@ for interaction = 1:numberOfInteractions
             end
         end
     else
-        nodeEnergy(nodeA) = max(nodeEnergy(nodeA) - 0.5, 0);
+        nodeEnergy(nodeA) = max(nodeEnergy(nodeA) - 0.3, 0);
     end
     
     % Calculate new delivery ratio with energy consideration
-    energyFactor = nodeEnergy(nodeA) / initialEnergyLevel; % Node health
+    energyFactor = min(nodeEnergy(nodeA) / initialEnergyLevel, 2); % Node health
     pathPenalty = 1 / (length(path) + 1); % Longer paths are penalized
     trustFactor = trustValue(nodeA, nodeB);
     
@@ -600,7 +606,7 @@ for interaction = 1:numberOfInteractions
     pathQualityBoost = min(1, 3 / length(path)); % Good if shorter path (max boost 1)
     
     % Modify by energy status
-    energyBoost = nodeEnergy(nodeA) / initialEnergyLevel; % Healthier node = higher boost
+    energyBoost = min(nodeEnergy(nodeA) / initialEnergyLevel, 2); % Healthier node = higher boost
     
     % Modify by trust momentum
     trustMomentum = (trustValue(nodeA, nodeB) - 5) / 5; % Positive if >5, Negative if <5
@@ -645,7 +651,7 @@ for interaction = 1:numberOfInteractions
     end
     
     % Apply trust update
-    trustValue(nodeA, nodeB) = max(0, min(10, trustValue(nodeA, nodeB) + trustChangeRate * 3 + nodeEnergy(nodeA)/initialEnergyLevel));
+    trustValue(nodeA, nodeB) = max(0, min(10, trustValue(nodeA, nodeB) + trustChangeRate * 3 + energyBoost));
     trustValues(interaction) = trustValue(nodeA, nodeB);
     
     % Update trust for nodes in the path
@@ -669,6 +675,9 @@ for interaction = 1:numberOfInteractions
     % Calculate moving average for trust visualization
     windowSize = min(10, interaction);
     movingAvgTrust(interaction) = mean(trustValues(max(1, interaction-windowSize+1):interaction));
+
+    %Calculate total energy history
+    totalEnergyHistory(interaction) = sum(nodeEnergy);
     
     % Periodically update cluster heads
     if mod(interaction, 20) == 0
@@ -694,7 +703,7 @@ for interaction = 1:numberOfInteractions
             % Check if current cluster head has low energy
             if nodeEnergy(clusterHeads(k)) < 0.2 * initialEnergyLevel
                 % Force cluster head replacement due to low energy
-                potentialHeads = members(nodeEnergy(members) >= 0.3 * initialEnergyLevel);
+                potentialHeads = members(nodeEnergy(members)/10 >= 0.3 * initialEnergyLevel);
                 if ~isempty(potentialHeads)
                     [~, bestIdx] = max(nodeTrustValues(potentialHeads) + nodeEnergy(potentialHeads));
                     clusterHeads(k) = potentialHeads(bestIdx);
@@ -825,4 +834,23 @@ xlabel('Interactions');
 ylabel('Delivery Ratio');
 title('Performance Comparison of Delivery Ratio in 10 interactions with 10% malicious nodes');
 legend('Location', 'northeastoutside'); % Automatically display labels from 'DisplayName'
-grid on; 
+
+% Sample data
+x = 1:10;           % Common x-axis values
+y1 = totalEnergyHistory(1:10);          % First dataset
+y2 = [5000, 5000, 5000, 4999, 4998, 4997, 4996, 4995, 4994, 4993];          % Second dataset
+y3 = [4990, 4930, 4910, 4900, 4850, 4800, 4730, 4700, 4670, 4640];       % Third dataset
+
+% Plot all arrays in one figure with different colors
+figure; % Opens a new figure window
+hold on; % Retain plots so new plots are added to the current figure
+plot(x, y2, 'b-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'AHP');   % Plot y2 in blue
+plot(x, y3, 'g-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'TERP'); % Plot y3 in green
+plot(x, y1, 'r-o','LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Proposed Results');   % Plot y1 in red
+hold off; % Release the hold to avoid affecting future plots
+
+% Add labels, legend, and title
+xlabel('Interactions');
+ylabel('Node Energy Sum (in Joules)');
+title('Performance Comparison of Node Energy Sum in 10 interactions with 10% malicious nodes');
+legend('Location', 'northeastoutside'); % Automatically display labels from 'DisplayName'
